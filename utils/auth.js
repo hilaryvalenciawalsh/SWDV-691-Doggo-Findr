@@ -1,41 +1,50 @@
-require('dotenv').config();
-const jwt = require('jsonwebtoken');
+import decode from 'jwt-decode';
 
-const secret = 'MYNAMEISISHTIYAKZAFARIMFRONRANCHIJHARKAHNDASDFFFF';
-const expiration = '2h';
-
-module.exports = {
-  signToken: function ({ username, email}) {
-    const payload = { username, email };
-
-    return jwt.sign({ data: payload }, secret, { expiresIn: expiration });
-  },
-  authMiddleware: function ({ req }) {
-
-    let token = req.body.token || req.query.token || req.headers.authorization;
-
-
-    if (req.headers.authorization) {
-      token = token
-        .split(' ')
-        .pop()
-        .trim();
-    }
-
-
-    if (!token) {
-      return req;
-    }
-
-    try {
-
-      const { data } = jwt.verify(token, secret, { maxAge: expiration });
-      req.user = data;
-    } catch {
-      console.log('Invalid token');
-    }
-
-
-    return req;
+class AuthService {
+  getProfile() {
+    return decode(this.getToken());
   }
-};
+
+  loggedIn() {
+
+    const token = this.getToken();
+    return !!token && !this.isTokenExpired(token);
+  }
+
+
+  isTokenExpired(token) {
+    try {
+      const decoded = decode(token);
+
+      if (decoded.exp < Date.now() / 1000) {
+        return true;
+      } else return false;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  getToken() {
+
+    return localStorage.getItem('id_token');
+  }
+
+  login(idToken) {
+
+    localStorage.setItem('id_token', idToken);
+    }
+    else {
+      window.location.assign('/');
+    }
+
+  }
+
+  logout() {
+
+    localStorage.removeItem('id_token');
+
+    window.location.assign('/');
+  }
+}
+
+export default new AuthService();
